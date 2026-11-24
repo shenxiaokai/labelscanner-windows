@@ -1,0 +1,6 @@
+rapidocr-onnxruntime==1.4.4
+onnxruntime==1.32.0
+opencv-python-headless==5.1.0.95
+zxing-cpp==3.1.1
+pillow==13.0.0
+pyinstaller==6.22.3
