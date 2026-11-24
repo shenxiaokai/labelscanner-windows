@@ -1,0 +1,52 @@
+name: Build Windows exe
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Stage OCR models
+        shell: python
+        run: |
+          import os, shutil, rapidocr_onnxruntime
+          src = os.path.join(os.path.dirname(rapidocr_onnxruntime.__file__), "models")
+          os.makedirs("models", exist_ok=True)
+          for f in os.listdir(src):
+              if f.endswith(".onnx"):
+                  shutil.copy(os.path.join(src, f), os.path.join("models", f))
+          print("models staged:", os.listdir("models"))
+
+      - name: Build exe
+        run: pyinstaller LabelScanner.spec
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LabelScanner-Windows
+          path: dist/LabelScanner.exe
+          if-no-files-found: error
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: windows-build-${{ github.run_number }}
+          name: LabelScanner Windows build ${{ github.run_number }}
+          body: "Windows 电脑版 .exe，双击即用（摄像头扫描 + OCR + 解析 + 对比）。"
+          files: dist/LabelScanner.exe
